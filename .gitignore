@@ -1,0 +1,6 @@
+/build/
+/saida*/
+*.zip
+__pycache__/
+*.log
+/.ferramentas/

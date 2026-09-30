@@ -1,0 +1,24 @@
+Internal ctest changing into directory: /projeto/build
+UpdateCTestConfiguration  from :/projeto/build/DartConfiguration.tcl
+Parse Config file:/projeto/build/DartConfiguration.tcl
+UpdateCTestConfiguration  from :/projeto/build/DartConfiguration.tcl
+Parse Config file:/projeto/build/DartConfiguration.tcl
+Test project /projeto/build
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 1
+    Start 1: integracao
+
+1: Test command: /usr/bin/python3 "/projeto/testes/verificar.py" "/projeto/build/pipeline_multimidia"
+1: Working Directory: /projeto/build
+1: Test timeout computed to be: 60
+1: PASSOU: caps, FPS por PTS, contagens, pixels, exportacao, protecao de saida e argumentos.
+1/1 Test #1: integracao .......................   Passed    0.25 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.25 sec

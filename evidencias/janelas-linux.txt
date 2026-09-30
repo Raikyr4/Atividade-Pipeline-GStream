@@ -1,0 +1,7 @@
+GStreamer 1.22.0
+ANTES: 640x360 | 30 FPS | RGB (colorido)
+DEPOIS: 320x180 | 10 FPS | GRAY8 (cinza)
+Duas janelas: organize lado a lado. Aguarde EOS ou pressione Ctrl+C.
+original: {"largura":640,"altura":360,"formato":"RGB","fps_numerador":30,"fps_denominador":1,"quadros":60,"fps_por_pts":30}
+processado: {"largura":320,"altura":180,"formato":"GRAY8","fps_numerador":10,"fps_denominador":1,"quadros":21,"fps_por_pts":10}
+EOS recebido. Recursos liberados.
