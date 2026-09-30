@@ -1,5 +1,10 @@
 # Histórico
 
+## Padronização da formatação
+
+- Indentação de quatro espaços, blocos C++ e PowerShell expandidos e linhas longas organizadas.
+- Configurações de formatação para VS Code, C++, Python e CMake.
+
 ## 1.1.0 — Execução Windows nativa
 
 - Código incluído na pasta aberta no VS Code.

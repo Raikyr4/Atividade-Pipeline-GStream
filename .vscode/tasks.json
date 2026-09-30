@@ -5,7 +5,12 @@
             "label": "GStreamer: compilar",
             "type": "process",
             "command": "powershell",
-            "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/compilar.ps1"],
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/compilar.ps1"
+            ],
             "problemMatcher": "$gcc",
             "group": "build"
         },
@@ -13,14 +18,24 @@
             "label": "GStreamer: executar",
             "type": "process",
             "command": "powershell",
-            "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/executar.ps1"],
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/executar.ps1"
+            ],
             "problemMatcher": "$gcc"
         },
         {
             "label": "GStreamer: testar",
             "type": "process",
             "command": "powershell",
-            "args": ["-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}/scripts/testar.ps1"],
+            "args": [
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/scripts/testar.ps1"
+            ],
             "problemMatcher": "$gcc",
             "group": "test"
         }

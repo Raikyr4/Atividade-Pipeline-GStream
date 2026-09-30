@@ -36,6 +36,10 @@ GStreamer 1.28.6 MinGW x64 está em `C:/Program Files/gstreamer/1.0/mingw_x86_64
 
 ## Documentação para apresentar
 
+O código usa quatro espaços por nível de indentação. `.editorconfig` e as configurações
+do VS Code mantêm esse padrão. O C++ segue `.clang-format`, com blocos expandidos e
+chaves em linhas próprias; Python segue a configuração Black em `pyproject.toml`.
+
 1. [Instalação e comandos](docs/01-instalacao.md)
 2. [Arquitetura e justificativas](docs/02-pipeline.md)
 3. [Conceitos e cálculos](docs/03-conceitos.md)

@@ -1,4 +1,5 @@
 """Teste de integracao: executa C++ e verifica midia e caps reais, sem monitor."""
+
 import json
 import pathlib
 import subprocess
@@ -16,7 +17,8 @@ with tempfile.TemporaryDirectory(prefix="pipeline-teste-") as pasta:
     assert resultado.returncode == 0, resultado.stdout + resultado.stderr
     relatorio = json.loads((pathlib.Path(pasta) / "relatorio.json").read_text())
     for nome, largura, altura, formato, fps in [
-        ("original", 640, 360, "RGB", 30), ("processado", 320, 180, "GRAY8", 10)
+        ("original", 640, 360, "RGB", 30),
+        ("processado", 320, 180, "GRAY8", 10),
     ]:
         dados = relatorio[nome]
         assert (dados["largura"], dados["altura"], dados["formato"]) == (largura, altura, formato)
@@ -29,8 +31,8 @@ with tempfile.TemporaryDirectory(prefix="pipeline-teste-") as pasta:
     cabecalho_cinza = b"P5\n320 180\n255\n"
     assert original.startswith(cabecalho_rgb)
     assert processado.startswith(cabecalho_cinza)
-    rgb = original[len(cabecalho_rgb):]
-    cinza = processado[len(cabecalho_cinza):]
+    rgb = original[len(cabecalho_rgb) :]
+    cinza = processado[len(cabecalho_cinza) :]
     assert len(rgb) == 640 * 360 * 3
     assert len(cinza) == 320 * 180
     assert any(rgb[i] != rgb[i + 1] for i in range(0, len(rgb), 3)), "Original sem cor"
@@ -40,7 +42,14 @@ with tempfile.TemporaryDirectory(prefix="pipeline-teste-") as pasta:
     assert (pathlib.Path(pasta) / "original.ppm").read_bytes() == original
 
 assert executar("--ajuda").returncode == 0
-for argumentos in [("--segundos", "0"), ("--segundos", "301"), ("--segundos", "2x"),
-                   ("--segundos", "abc"), ("--segundos",), ("--exportar",), ("--invalido",)]:
+for argumentos in [
+    ("--segundos", "0"),
+    ("--segundos", "301"),
+    ("--segundos", "2x"),
+    ("--segundos", "abc"),
+    ("--segundos",),
+    ("--exportar",),
+    ("--invalido",),
+]:
     assert executar(*argumentos).returncode != 0, argumentos
 print("PASSOU: caps, FPS por PTS, contagens, pixels, exportacao, protecao de saida e argumentos.")
