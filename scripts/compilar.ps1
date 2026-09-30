@@ -1,3 +1,13 @@
+<#
+.SYNOPSIS
+    Compila a aplicacao C++ com GCC x64 e o SDK GStreamer instalado no Windows.
+.DESCRIPTION
+    Prefere o compilador portatil da pasta .ferramentas. Valida a arquitetura,
+    configura os includes e vincula as import libraries do SDK explicitamente.
+    O executavel fica em build; nenhum PATH global ou instalador e alterado.
+.PARAMETER Compilador
+    Caminho opcional para outro g++.exe x64 que suporte C++17.
+#>
 param(
     [string]$Compilador
 )
@@ -5,6 +15,7 @@ param(
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/ambiente.ps1"
 
+# 1. Resolver o compilador. GStreamer x64 nao pode usar o GCC global de 32 bits.
 if (-not $Compilador) {
     $portatil = Join-Path $raizProjeto '.ferramentas/w64devkit/bin/g++.exe'
 
@@ -16,6 +27,7 @@ if (-not $Compilador) {
     }
 }
 
+# 2. Conferir o alvo antes de compilar, para dar um erro claro de incompatibilidade.
 $arquitetura = & $Compilador -dumpmachine
 
 if ($LASTEXITCODE -ne 0 -or $arquitetura -notmatch 'x86_64') {
@@ -25,6 +37,9 @@ if ($LASTEXITCODE -ne 0 -or $arquitetura -notmatch 'x86_64') {
 $pastaBuild = Join-Path $raizProjeto 'build'
 New-Item -ItemType Directory -Force $pastaBuild | Out-Null
 
+# 3. Montar argumentos separados preserva caminhos que contem espacos.
+# -I informa os cabecalhos; as bibliotecas .dll.a resolvem chamadas ao runtime.
+# Usar caminhos completos evita selecionar por engano a libstdc++ do SDK.
 $argumentos = @(
     '-std=c++17',
     '-O2',
@@ -46,6 +61,7 @@ $argumentos = @(
     "$raizGStreamer/lib/libglib-2.0.dll.a"
 )
 
+# 4. Executar o compilador e propagar falhas para os scripts que o chamaram.
 & $Compilador @argumentos
 
 if ($LASTEXITCODE -ne 0) {

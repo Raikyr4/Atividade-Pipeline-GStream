@@ -1,0 +1,1 @@
+PASSOU: importacao, caminhos Unicode, arquivo invalido, caps, FPS por PTS, contagens, pixels, exportacao, protecao de saida e argumentos.

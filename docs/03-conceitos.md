@@ -1,56 +1,58 @@
-# Conceitos da disciplina aplicados
+# Conceitos aplicados ao vídeo importado
+
+## Contêiner, codec e quadros brutos
+
+MP4, WebM e MKV são contêineres: organizam faixas, timestamps e outros dados. O codec descreve como os dados foram comprimidos. A extensão não garante que o decodificador esteja instalado. `uridecodebin` identifica o conteúdo e seleciona plugins para obter quadros `video/x-raw`.
+
+O vídeo de referência já foi decodificado e convertido para RGB. Portanto, o programa preserva seu conteúdo, tamanho e tempo, mas não os bytes nem necessariamente o formato de pixels originalmente usados pelo codec.
 
 ## Resolução e amostragem espacial
 
-Resolução indica quantos pixels compõem cada quadro. O original tem 640 × 360 = 230.400 pixels. A saída tem 320 × 180 = 57.600 pixels. Dividir largura e altura por dois reduz a quantidade total para um quarto. A proporção 16:9 é mantida; não há intenção de esticar a imagem.
+No exemplo Sintel, medimos 854 × 480 = 409.920 pixels por quadro. A saída usa 320 × 180 = 57.600 pixels. Reduzir essa grade exige reamostragem e pode eliminar detalhes. Aumentar a janela depois não recupera a informação perdida.
 
-Redimensionar exige reamostragem: calcular uma nova grade de pixels a partir da anterior. `videoscale` realiza esse processamento. Detalhes menores podem desaparecer. Se o usuário ampliar a janela do vídeo reduzido, a janela cresce, mas os detalhes descartados não reaparecem. É por isso que a resolução negociada deve ser lida no relatório, não deduzida pelo tamanho da janela.
+O destino tem proporção 16:9 e pixels quadrados. `videoscale` pode inserir bordas para preservar a proporção quando a entrada for diferente. A resolução deve ser conferida pelas caps, não pelo tamanho aparente da janela.
 
 ## FPS e amostragem temporal
 
-FPS é a quantidade de quadros por segundo de mídia. A 30 FPS, o intervalo nominal é aproximadamente 33,33 ms. A 10 FPS, é 100 ms. A segunda versão tem menos atualizações de movimento, mesmo que a duração total seja a mesma.
+O exemplo apresenta aproximadamente 24 quadros por segundo pelos PTS; a saída apresenta 10. São aproximadamente 41,67 ms entre quadros de entrada e 100 ms na saída. Há menos amostras do movimento, mantendo o intervalo temporal do trecho.
 
-`videorate` usa os tempos dos buffers para adequar a cadência. Na redução, descarta quadros; em aumentos de taxa, pode repetir quadros. Não é um algoritmo que inventa posições intermediárias dos objetos. A [documentação do elemento](https://gstreamer.freedesktop.org/documentation/videorate/index.html) descreve essa política.
+`videorate` descarta ou repete quadros; não cria movimento intermediário por interpolação. Reduzir FPS não é produzir câmera lenta. Se a entrada tiver menos de 10 FPS, o elemento poderá repetir quadros para atingir a saída; nesse caso não se deve falar em redução.
 
-Reduzir FPS não significa colocar o vídeo em câmera lenta. Câmera lenta alteraria a relação entre tempo do conteúdo e reprodução. Aqui mantemos a duração e reduzimos as amostras temporais. O deslocamento horizontal da imagem facilita observar a diferença.
+As caps do WebM incluído declaram FPS como 0/1. Esse valor indica cadência não especificada. A reprodução continua tendo timestamps. O programa calcula a média observada:
 
-## Representação RGB e GRAY8
+```text
+FPS por PTS = (quantidade de quadros − 1) × 1.000.000.000
+             / (PTS final − PTS inicial)
+```
 
-RGB combina componentes vermelho, verde e azul. Nesta configuração, cada componente ocupa 8 bits, totalizando 24 bits ou 3 bytes por pixel. GRAY8 usa uma amostra de intensidade de 8 bits por pixel, totalizando 1 byte e até 256 valores possíveis.
+N quadros delimitam N − 1 intervalos. O fator converte nanossegundos em segundos. Essa média não mede FPS da CPU nem taxa física do monitor. Em arquivos com cadência variável, é uma média do trecho, não prova de intervalos uniformes.
 
-A conversão perde informação cromática: dois pixels originalmente de cores diferentes podem passar a intensidades próximas ou iguais. O cinza não é necessariamente a média aritmética de R, G e B. O conversor considera as regras de conversão e informações de cor negociadas. A experiência não fixa uma matriz colorimétrica nem pretende medir fidelidade de cor; ela demonstra mudança de representação e perda de cor visível.
+## RGB e GRAY8
 
-Não confunda canais de cor com canais de áudio. Este trabalho usa vídeo; os três requisitos modificados são espaciais, temporais e de representação de pixels. Também não há codec de compressão: `video/x-raw` identifica quadros não comprimidos.
+RGB usa três componentes de 8 bits nesta aplicação, totalizando três bytes por pixel. GRAY8 usa uma intensidade de 8 bits, um byte por pixel. A conversão perde informação cromática: não é possível recuperar as cores originais depois apenas voltando a RGB.
 
-## Estimativa do volume bruto
+O cálculo do cinza não deve ser descrito como simples média aritmética de R, G e B: as regras de conversão e informações de cor negociadas influenciam o resultado. A comparação mede GRAY8 antes do conversor final exigido pela janela.
 
-Considerando apenas os pixels ativos, sem padding, metadados ou custos da pipeline:
+## Estimativa de dados brutos no exemplo
 
-| Cálculo | Original RGB | Processado GRAY8 |
+Usando 24 FPS como aproximação da entrada, sem alinhamento de memória ou metadados:
+
+| Grandeza | Referência RGB | Processado GRAY8 |
 |---|---:|---:|
-| Pixels por quadro | 230.400 | 57.600 |
+| Pixels por quadro | 409.920 | 57.600 |
 | Bytes por pixel | 3 | 1 |
-| Bytes por quadro | 691.200 | 57.600 |
-| Quadros por segundo | 30 | 10 |
-| Bytes por segundo | 20.736.000 | 576.000 |
-| MB/s decimais | 20,736 | 0,576 |
+| Bytes por quadro | 1.229.760 | 57.600 |
+| Quadros por segundo | aproximadamente 24 | 10 |
+| Bytes ativos por segundo | aproximadamente 29.514.240 | 576.000 |
 
-Razão: `20.736.000 / 576.000 = 36`. A representação de saída tem aproximadamente 97,22% menos bytes ativos por segundo. Isso resulta do produto de três fatores: quatro vezes menos pixels, três vezes menos componentes por pixel e três vezes menos quadros por segundo.
+A razão aproximada é 51,24. Isso corresponde a cerca de 98,05% menos bytes ativos por segundo na representação de saída. **Não é a taxa de compressão do WebM**, nem uma medição de economia total de CPU/RAM. A aplicação ainda executa decoder, dois ramos e filas. Para outro arquivo, refaça as contas com seus valores reais.
 
-Esse cálculo **não** prova uma redução de 36 vezes no consumo total de RAM, na CPU ou no tráfego de rede. A aplicação mantém os dois ramos, possui filas, pode ter alinhamento em memória e não transmite pela rede. É uma comparação matemática de carga bruta de pixels, não um benchmark nem uma taxa de compressão de arquivo.
+## Pad, caps, buffer, bus e estado
 
-## Buffer, pad, caps e bus
+Pads são portas dos elementos. Caps descrevem formatos compatíveis ou negociados. Buffers carregam quadros e timestamps. O bus comunica mensagens de controle à aplicação. `PAUSED` prepara a mídia, `PLAYING` permite reprodução e `NULL` encerra recursos.
 
-- **Buffer:** carrega dados e informações temporais. Neste experimento, cada buffer medido representa um quadro.
-- **Pad:** ponto de entrada ou saída de um elemento; links conectam pads compatíveis.
-- **Caps:** descrevem mídia e formatos possíveis ou negociados, como largura, altura e FPS.
-- **Bus:** entrega mensagens da pipeline à aplicação, como erro e fim do fluxo.
-- **PTS:** timestamp de apresentação de um buffer; permite relacioná-lo à linha do tempo.
+O seek escolhe um intervalo do vídeo existente. `FLUSH` descarta dados pendentes; `ACCURATE` solicita posicionamento preciso. O limite usa tempo de mídia, preservando seu significado mesmo quando o teste processa tudo rapidamente sem desenhar na tela.
 
-O relatório apresenta tanto FPS declarado nas caps quanto FPS calculado com timestamps: `(N − 1) × 1.000.000.000 / (PTS_último − PTS_primeiro)`. O fator converte nanossegundos em segundos. A conta usa N − 1 porque N quadros definem N − 1 intervalos. Ela mede cadência temporal dos buffers; não mede a taxa de atualização física do monitor nem desempenho em quadros por segundo de CPU.
+## Critério para a apresentação
 
-## Estados e sincronização
-
-`NULL` corresponde ao estado inicial sem recursos ativos. `READY` prepara recursos; `PAUSED` permite preparar dados para reprodução; `PLAYING` faz a pipeline avançar. A chamada para `PLAYING` pode realizar transições intermediárias de forma assíncrona.
-
-No modo visual, os sinks usam sincronização com o relógio. No modo de teste, `sync=false` permite consumir os quadros mais rapidamente, preservando seus timestamps. EOS significa que o fluxo acabou; não é uma falha. Um erro de renderização ou negociação é comunicado separadamente.
+Use o exemplo incluído ou outro vídeo colorido, com resolução e FPS diferentes da saída. Assim é possível demonstrar pelo menos duas alterações reais. Um vídeo já cinza, 320 × 180 e 10 FPS não é uma boa escolha para essa atividade.

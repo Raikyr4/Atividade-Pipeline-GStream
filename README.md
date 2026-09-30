@@ -1,53 +1,61 @@
-# Pipeline Multimídia — C++ + GStreamer
+# Pipeline Multimídia — processamento de vídeo existente
 
-Projeto acadêmico nesta pasta do VS Code. Execução nativa no Windows, com o GStreamer instalado e GCC/MinGW-w64 x64.
+Aplicação C++ + GStreamer executada nativamente no Windows. Abre um arquivo de vídeo, divide os quadros decodificados em dois ramos e compara a referência com uma versão reduzida, em cinza e a 10 FPS. **Nenhum vídeo é gerado pela aplicação.**
 
-## Executar
+## Executar agora
 
-No PowerShell da raiz aberta no VS Code:
+Dê dois cliques em **Iniciar.cmd**. Ele usa o trailer de exemplo já incluído em `midia/exemplo.webm`, começando no segundo 5 para pular a abertura preta.
+
+Para usar seu próprio vídeo, **arraste o arquivo sobre Iniciar.cmd**. Também pode executar no terminal do VS Code:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File ./scripts/executar.ps1
+powershell -ExecutionPolicy Bypass -File ./scripts/executar.ps1 -Video "C:/Videos/meu-video.mp4"
 ```
 
-O script compila e abre duas janelas por 30 segundos. A colorida é o original; a cinza é o processado. Organize-as lado a lado. Também pode usar **Terminal → Executar Tarefa → GStreamer: executar**.
+Sem `-Video`, o comando usa o exemplo incluído. Para escolher um trecho:
 
-| Característica | Original | Processado |
+```powershell
+powershell -ExecutionPolicy Bypass -File ./scripts/executar.ps1 -Video "C:/Videos/meu-video.mp4" -Inicio 10 -Segundos 30
+```
+
+`-Inicio` é a posição inicial em segundos; `-Segundos` é a duração máxima do trecho. Arquivos menores terminam antes. Um arquivo próprio começa no segundo zero quando `-Inicio` não é informado. A reprodução apresenta **somente vídeo, sem áudio**, em duas janelas.
+
+## Comparação
+
+| Característica | Referência | Processado |
 |---|---|---|
-| Resolução | 640 × 360 | 320 × 180 |
-| Taxa de quadros | 30 FPS | 10 FPS |
-| Representação | RGB, colorido | GRAY8, cinza |
+| Fonte | Arquivo local decodificado | Os mesmos quadros |
+| Resolução | Preservada do vídeo | 320 × 180 |
+| Cadência | Preservada do vídeo | 10 FPS |
+| Representação medida | RGB, após conversão para comparação | GRAY8, cinza |
 
-Uma fonte `videotestsrc` alimenta dois ramos por `tee`. `videoscale`, `videorate` e `videoconvert` transformam a mídia; `capsfilter` exige o formato final. A imagem se desloca horizontalmente para tornar a diferença de FPS perceptível.
+No exemplo incluído, a referência é 854 × 480 e aproximadamente 24 FPS. O WebM declara FPS nominal 0/1 nas caps; isso significa taxa não declarada, e não vídeo parado. O programa mede a cadência pelos timestamps.
 
-## Testes e exportação
+Para demonstrar pelo menos duas mudanças, escolha um vídeo colorido, maior que 320 × 180 e com cadência superior a 10 FPS. Um arquivo já idêntico à saída desejada não evidenciará as mesmas diferenças. MP4, WebM, MKV e outros contêineres dependem dos decodificadores instalados no GStreamer.
+
+## Testar e exportar
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File ./scripts/testar.ps1
-powershell -ExecutionPolicy Bypass -File ./scripts/executar.ps1 -SemJanela -Segundos 2 -Exportar ./saida-local
-python ./scripts/gerar_comparacao.py ./saida-local
+powershell -ExecutionPolicy Bypass -File ./scripts/executar.ps1 -SemJanela -Segundos 2 -Exportar ./saida-importada
+python ./scripts/gerar_comparacao.py ./saida-importada
 ```
 
-Abra `saida-local/comparacao.html`. Escolha outra pasta ao repetir: a aplicação protege os arquivos existentes. Python auxilia testes e visualização; a aplicação multimídia é C++.
+Abra `saida-importada/comparacao.html`. Use outra pasta ao repetir: a aplicação protege arquivos existentes. A exportação contém um quadro por ramo e um relatório, não um novo arquivo de vídeo. O arquivo de entrada nunca é modificado.
 
-## Ambiente local
+## Ambiente e código
 
-GStreamer 1.28.6 MinGW x64 está em `C:/Program Files/gstreamer/1.0/mingw_x86_64`. O GCC global é 32 bits, incompatível com essas bibliotecas. Foi preparado GCC x64 portátil em `.ferramentas/w64devkit`, preservando a instalação global. Essa pasta é ignorada pelo Git; outra máquina precisa de um compilador x64 próprio ou do mesmo pacote portátil. Os scripts ajustam o PATH apenas no processo atual e compilam diretamente, sem exigir CMake no Windows.
+Os scripts usam GStreamer MinGW x64 local e GCC x64 portátil em `.ferramentas/w64devkit`. Não usam containers nem alteram o GCC global de 32 bits. `src/principal.cpp` tem comentários detalhados e etapas separadas por linhas em branco. A função `ConectarVideo` explica a ligação dinâmica dos pads do decodificador.
 
-## Documentação para apresentar
-
-O código usa quatro espaços por nível de indentação. `.editorconfig` e as configurações
-do VS Code mantêm esse padrão. O C++ segue `.clang-format`, com blocos expandidos e
-chaves em linhas próprias; Python segue a configuração Black em `pyproject.toml`.
+## Material para apresentação
 
 1. [Instalação e comandos](docs/01-instalacao.md)
-2. [Arquitetura e justificativas](docs/02-pipeline.md)
+2. [Arquitetura da pipeline](docs/02-pipeline.md)
 3. [Conceitos e cálculos](docs/03-conceitos.md)
-4. [Roteiro de apresentação e perguntas](docs/04-apresentacao.md)
-5. [Testes e diagnóstico](docs/05-validacao.md)
-6. [Referências oficiais](docs/06-referencias.md)
-7. [Evidências nativas](docs/07-evidencias.md)
+4. [Roteiro de apresentação](docs/04-apresentacao.md)
+5. [Validação e diagnóstico](docs/05-validacao.md)
+6. [Fontes pesquisadas](docs/06-referencias.md)
+7. [Evidências atuais](docs/07-evidencias.md)
+8. [Guia de defesa: perguntas do professor e respostas comentadas](docs/08-defesa-perguntas.md)
 
-**Código:** `src/principal.cpp`. **Scripts:** `scripts/`. **Executável:** `build/pipeline_multimidia.exe`. **Testes:** `testes/verificar.py`.
-
-O projeto atende à integração C++, fonte de mídia, processamento, saída funcional, três mudanças e comparação antes/depois. É independente dos serviços do restaurante.
+Vídeo de exemplo: **Sintel**, Blender Foundation, disponibilizado sob CC BY 3.0. Consulte [origem e atribuição](midia/README.md). O material visual de Sintel não foi criado pelo grupo; a contribuição do projeto é a aplicação de processamento.

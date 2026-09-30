@@ -1,5 +1,21 @@
 # Histórico
 
+## Importação de vídeo existente
+
+- Fonte sintética substituída por `uridecodebin` e ligação dinâmica da faixa de vídeo.
+- Resolução e cadência da referência preservadas; saída em 320 × 180, 10 FPS e GRAY8.
+- Opções `--video`/`-Video` e `--inicio`/`-Inicio`, com limites por seek temporal.
+- Vídeo Sintel incluído com atribuição; arrastar arquivo sobre `Iniciar.cmd` seleciona outra entrada.
+- Testes de importação, caminhos Unicode, mídia inválida e comparação de pixels.
+- Documentação, roteiro e evidências atualizados para arquivos reais.
+
+## Legibilidade e comentários explicativos
+
+- Separação visual entre declarações, validações, processamento e limpeza.
+- Comentários detalhados nas funções C++, com dez etapas de execução em `main`.
+- Explicação de caps, pads, PTS, EOS, stride, threads e liberação de referências.
+- Scripts PowerShell e Python comentados, com etapas identificadas nos testes.
+
 ## Padronização da formatação
 
 - Indentação de quatro espaços, blocos C++ e PowerShell expandidos e linhas longas organizadas.

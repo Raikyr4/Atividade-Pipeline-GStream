@@ -1,31 +1,35 @@
-# Evidências de execução Windows nativa
+# Evidências atuais — vídeo existente importado
 
-Validação realizada nesta máquina com GStreamer **1.28.6**, GCC **16.2.0 x64** portátil e bibliotecas MinGW x64 do SDK local. Nenhum container foi usado nessa validação.
+Execução nativa no Windows com GStreamer 1.28.6 e GCC 16.2.0 x64. A entrada foi `midia/exemplo.webm`, trailer Sintel, lido do disco. O programa não gerou uma fonte sintética.
 
-## Compilação e testes
+## Reprodução real
 
-A compilação C++17 passou com `-Wall -Wextra -Wpedantic`, sem avisos. O teste de integração local passou: caps, FPS por PTS, contagens, pixels, exportação, proteção de arquivos existentes e argumentos inválidos.
+Executado o trecho de três segundos iniciado em 5 s, com duas saídas `autovideosink`. A aplicação chegou a EOS e retornou código 0.
 
-[Log do teste Windows](../evidencias/windows-testes.txt).
-
-## Reprodução
-
-O executável foi iniciado em modo gráfico nativo por três segundos, usando `autovideosink` em ambos os ramos. Chegou a EOS e terminou com código 0. A validação confirma execução do caminho gráfico; a percepção da diferença de movimento deve ser conferida no ensaio da apresentação.
-
-| Medição real | Original | Processado |
+| Medição | Referência | Processado |
 |---|---:|---:|
-| Resolução | 640 × 360 | 320 × 180 |
-| Formato | RGB | GRAY8 |
-| FPS das caps | 30 | 10 |
-| FPS por timestamps | 30 | 10 |
-| Quadros observados | 90 | 31 |
+| Resolução | 854 × 480 | 320 × 180 |
+| Formato medido | RGB | GRAY8 |
+| FPS nominal das caps | 0/1, não declarado | 10/1 |
+| Cadência média por PTS | 24,0027 FPS | 10 FPS |
+| Buffers observados | 72 | 30 |
 
-O ramo processado produziu um quadro adicional na fronteira de encerramento. A cadência permanece 10 FPS: 31 amostras delimitam 30 intervalos. O teste aceita um quadro de diferença na contagem finita e verifica também os timestamps.
+- [Log da reprodução](../evidencias/video-importado-execucao.txt)
+- [Relatório JSON](../evidencias/video-importado/relatorio.json)
+- [Comparação HTML](../evidencias/video-importado/comparacao.html)
+- [Original exportado](../evidencias/video-importado/original.ppm)
+- [Processado exportado](../evidencias/video-importado/processado.pgm)
 
-- [Log gráfico Windows](../evidencias/windows-execucao.txt)
-- [Relatório real](../evidencias/windows-nativo/relatorio.json)
-- [Comparação HTML gerada localmente](../evidencias/windows-nativo/comparacao.html)
-- [Original PPM](../evidencias/windows-nativo/original.ppm)
-- [Processado PGM](../evidencias/windows-nativo/processado.pgm)
+## Integração
 
-As imagens são o primeiro quadro de cada ramo, exportadas pelo C++. Elas demonstram resolução e cor; FPS é demonstrado por reprodução e medição temporal. Arquivos anteriores na pasta de evidências são históricos; os links acima identificam a execução Windows atual.
+[Log dos testes atuais](../evidencias/video-importado-testes.txt). Foram verificadas importação, resolução, formato, PTS, contagem, pixels, proteção da exportação, argumentos, arquivo inválido e caminho com espaços e acentos.
+
+O teste de dois segundos observou aproximadamente 48 quadros na entrada e 20 na saída. Seu limite admite um quadro de diferença na fronteira temporal. O teste não presume que FPS 0/1 signifique ausência de quadros.
+
+A execução gráfica comprova o caminho nativo neste ambiente; o grupo ainda deve ensaiar a comparação de movimento no monitor usado na apresentação. As imagens exportadas demonstram pixels e dimensões, não movimento.
+
+## Histórico
+
+Outras subpastas e logs antigos em `evidencias/` pertencem à versão anterior com fonte sintética. Para apresentar a versão atual, use apenas os arquivos `video-importado` listados acima.
+
+Mídia de exemplo: Sintel, Blender Foundation, CC BY 3.0. [Créditos e fonte](../midia/README.md).

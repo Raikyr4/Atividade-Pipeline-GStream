@@ -10,23 +10,44 @@ import zlib
 
 
 def bloco(tipo, dados):
-    """Codifica um bloco PNG com tamanho e CRC."""
+    """Monta um bloco PNG: tamanho, identificador, dados e verificacao CRC.
+
+    Inteiros usam big-endian, como exige o formato PNG. O CRC protege o tipo
+    e os dados do bloco; o tamanho descreve apenas o comprimento dos dados.
+    Esta funcao empacota bytes, sem alterar os pixels produzidos pelo C++.
+    """
+
     return (
         struct.pack(">I", len(dados)) + tipo + dados + struct.pack(">I", zlib.crc32(tipo + dados))
     )
 
 
 def imagem_png(caminho):
-    """Converte exclusivamente o formato PPM/PGM simples emitido pela aplicacao."""
+    """Converte um quadro exportado pelo C++ para um PNG embutivel em HTML.
+
+    Aceita somente o cabecalho simples emitido por SalvarImagem: P6 para RGB
+    ou P5 para cinza, seguido de dimensoes, valor maximo 255 e pixels brutos.
+    Nao e um leitor generico de todas as variantes de arquivos PPM/PGM.
+    """
+
+    # As tres primeiras quebras separam o cabecalho do conteudo binario.
     assinatura, dimensoes, maximo, pixels = caminho.read_bytes().split(b"\n", 3)
     largura, altura = map(int, dimensoes.split())
+
     if assinatura not in (b"P6", b"P5") or maximo != b"255":
         raise ValueError("Formato de imagem inesperado")
+    # RGB possui tres componentes; GRAY8 possui apenas uma intensidade.
     canais = 3 if assinatura == b"P6" else 1
     passo = largura * canais
+
     if len(pixels) != passo * altura:
         raise ValueError("Quantidade de pixels invalida")
+    # Cada linha PNG comeca com o tipo de filtro. Zero significa "sem filtro";
+    # os bytes de pixels seguem intactos, antes da compressao sem perdas zlib.
     linhas = b"".join(b"\x00" + pixels[i * passo : (i + 1) * passo] for i in range(altura))
+
+    # IHDR descreve a imagem; IDAT guarda os dados; IEND marca o fim do arquivo.
+    # Tipos de cor PNG: 2 = RGB, 0 = cinza. Ambos usam amostras de 8 bits.
     cabecalho = struct.pack(">IIBBBBB", largura, altura, 8, 2 if canais == 3 else 0, 0, 0, 0)
     png = (
         b"\x89PNG\r\n\x1a\n"
@@ -34,22 +55,38 @@ def imagem_png(caminho):
         + bloco(b"IDAT", zlib.compress(linhas))
         + bloco(b"IEND", b"")
     )
+
+    # Base64 permite incluir o arquivo na propria pagina, sem links externos.
     return base64.b64encode(png).decode("ascii")
 
 
 def gerar(pasta):
-    """Monta comparacao que pode ser aberta offline e enviada junto ao relatorio."""
+    """Cria uma pagina offline com os dois primeiros quadros e as medicoes.
+
+    A resolucao, o formato e o FPS vem do relatorio real da aplicacao C++.
+    As imagens mostram cor e dimensoes; a pagina nao reproduz movimento.
+    HTML e CSS ficam embutidos para facilitar enviar um unico arquivo.
+    """
+
+    # Carregar os resultados antes de montar os paineis evita valores inventados.
     relatorio = json.loads((pasta / "relatorio.json").read_text(encoding="utf-8"))
     paineis = []
+
     for chave, titulo, arquivo in [
         ("original", "Antes · original", "original.ppm"),
         ("processado", "Depois · processado", "processado.pgm"),
     ]:
         dados = relatorio[chave]
-        legenda = (
-            f'{dados["largura"]} × {dados["altura"]} · {dados["formato"]} · '
-            f'{dados["fps_numerador"] / dados["fps_denominador"]:g} FPS'
-        )
+
+        # 0/1 pode indicar cadencia nao declarada pelo arquivo, nao video parado.
+        fps_nominal = "FPS nominal não declarado"
+
+        if dados["fps_numerador"] > 0 and dados["fps_denominador"] > 0:
+            fps_nominal = f'{dados["fps_numerador"] / dados["fps_denominador"]:g} FPS'
+
+        legenda = f'{dados["largura"]} × {dados["altura"]} · {dados["formato"]} · {fps_nominal}'
+
+        # Escapar o texto evita interpreta-lo como marcacao HTML.
         paineis.append(
             f"            <article>\n"
             f"                <h2>{titulo}</h2>\n"
@@ -62,6 +99,8 @@ def gerar(pasta):
             f'{dados["fps_por_pts"]:g} FPS por PTS</p>\n'
             f"            </article>\n"
         )
+
+    # Estrutura visual comum aos dois ramos. As imagens ja estao em paineis.
     pagina = """<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -141,7 +180,9 @@ def gerar(pasta):
         <p>Resolução, cadência temporal e cor transformadas na mesma pipeline.</p>
         <section class="grade">
 """
+
     pagina += "".join(paineis)
+
     pagina += (
         "        </section>\n"
         "        <p>\n"
@@ -156,16 +197,23 @@ def gerar(pasta):
         + html.escape(json.dumps(relatorio, ensure_ascii=False, indent=2))
         + "</pre>\n"
         "        </details>\n"
+        "        <p>Vídeo de exemplo incluído no projeto: Sintel, Blender Foundation, "
+        '<a href="https://durian.blender.org/about/">CC BY 3.0</a>. '
+        "O processamento altera resolução, cadência e cor.</p>\n"
         "    </main>\n"
         "</body>\n"
         "</html>\n"
     )
+
+    # UTF-8 conserva os acentos, e write_text permite abrir a pagina offline.
     destino = pasta / "comparacao.html"
     destino.write_text(pagina, encoding="utf-8")
     print(destino.resolve())
 
 
 if __name__ == "__main__":
+    # O usuario fornece a pasta que contem os tres arquivos exportados pelo C++.
     if len(sys.argv) != 2:
         raise SystemExit("Uso: python scripts/gerar_comparacao.py PASTA_EXPORTADA")
+
     gerar(Path(sys.argv[1]))
