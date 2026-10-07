@@ -15,13 +15,13 @@ struct ConfiguracaoPcm
 
 int main(int argc, char* argv[])
 {
-    const ConfiguracaoPcm configuracaoA{
-        "A", "audio/x-raw,format=S16LE,rate=44100,channels=2", "44.100 Hz, 16 bits, estereo"};
-    const ConfiguracaoPcm configuracaoB{
-        "B", "audio/x-raw,format=S16LE,rate=8000,channels=1", "8.000 Hz, 16 bits, mono"};
+    const ConfiguracaoPcm configuracaoA{"A", "audio/x-raw,format=S16LE,rate=44100,channels=2", "44.100 Hz, 16 bits, estereo"};
+    const ConfiguracaoPcm configuracaoB{"B", "audio/x-raw,format=S16LE,rate=8000,channels=1", "8.000 Hz, 16 bits, mono"};
 
     const ConfiguracaoPcm* pcm = &configuracaoA;
+    
     fs::path saida = "saida_pcm_A.mkv";
+    fs::path video;
 
     for (int i = 1; i < argc; ++i)
     {
@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
 
         if (argumento == "--ajuda")
         {
-            std::cout << "Uso: exercicio_2 [--pcm A|B] [--saida arquivo.mkv]\n"
+            std::cout << "Uso: exercicio_2 --video entrada [--pcm A|B] [--saida arquivo.mkv]\n"
                          "A: 44100 Hz, S16LE, 2 canais\n"
                          "B: 8000 Hz, S16LE, 1 canal\n";
             return 0;
@@ -47,6 +47,10 @@ int main(int argc, char* argv[])
                 return 1;
             }
         }
+        else if (argumento == "--video" && i + 1 < argc)
+        {
+            video = argv[++i];
+        }
         else if (argumento == "--saida" && i + 1 < argc)
         {
             saida = argv[++i];
@@ -62,6 +66,12 @@ int main(int argc, char* argv[])
     if (saida == "saida_pcm_A.mkv" && pcm == &configuracaoB)
         saida = "saida_pcm_B.mkv";
 
+    if (video.empty() || !fs::is_regular_file(video))
+    {
+        std::cerr << "Erro: informe um video existente com --video. Recebido: " << video << '\n';
+        return 1;
+    }
+
     if (fs::exists(saida))
     {
         std::cerr << "Erro: arquivo de saida ja existe: " << saida << '\n';
@@ -70,13 +80,17 @@ int main(int argc, char* argv[])
 
     gst_init(&argc, &argv);
 
-    // Cinco segundos de barras de video H.264 e tom de audio PCM dentro de MKV.
-    // audioconvert e audioresample realizam, respectivamente, conversao de formato/canais e taxa.
+    // Video existente: decodebin identifica container e codecs e cria um pad por fluxo.
+    // Os pads sao dinamicos; gst_parse_launch liga cada um ao primeiro elemento compativel
+    // (videoconvert aceita apenas video, audioconvert apenas audio).
+    // Video: reencodado em H.264. I420 gera perfil High (4:2:0), compativel com a maioria dos players.
+    // Audio: audioconvert e audioresample convertem formato/canais e taxa para as caps A ou B.
     const std::string pipelineTexto =
         "matroskamux name=mux ! filesink name=arquivo "
-        "videotestsrc num-buffers=150 ! videoconvert ! "
+        "filesrc name=entrada ! decodebin name=dec "
+        "dec. ! videoconvert ! video/x-raw,format=I420 ! "
         "x264enc tune=zerolatency ! h264parse ! queue ! mux. "
-        "audiotestsrc wave=sine num-buffers=216 ! audioconvert ! audioresample ! " +
+        "dec. ! audioconvert ! audioresample ! " +
         std::string(pcm->caps) + " ! queue ! mux.";
 
     GError* erro = nullptr;
@@ -89,11 +103,15 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    GstElement* entrada = gst_bin_get_by_name(GST_BIN(pipeline), "entrada");
+    g_object_set(entrada, "location", video.string().c_str(), nullptr);
+    gst_object_unref(entrada);
+
     GstElement* arquivo = gst_bin_get_by_name(GST_BIN(pipeline), "arquivo");
     g_object_set(arquivo, "location", saida.string().c_str(), nullptr);
     gst_object_unref(arquivo);
 
-    std::cout << "Gerando " << saida << "\nPCM " << pcm->nome << ": " << pcm->descricao
+    std::cout << "Entrada: " << video.string() << "\nGerando " << saida << "\nPCM " << pcm->nome << ": " << pcm->descricao
               << "\nVideo: H.264\n";
 
     GstBus* bus = gst_element_get_bus(pipeline);
