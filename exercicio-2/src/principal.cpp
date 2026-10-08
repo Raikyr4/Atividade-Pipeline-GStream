@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 
     const ConfiguracaoPcm* pcm = &configuracaoA;
     
-    fs::path saida = "saida_pcm_A.mkv";
+    fs::path saida = "saida_pcm_A.mov";
     fs::path video;
 
     for (int i = 1; i < argc; ++i)
@@ -29,7 +29,7 @@ int main(int argc, char* argv[])
 
         if (argumento == "--ajuda")
         {
-            std::cout << "Uso: exercicio_2 --video entrada [--pcm A|B] [--saida arquivo.mkv]\n"
+            std::cout << "Uso: exercicio_2 --video entrada [--pcm A|B] [--saida arquivo.mov]\n"
                          "A: 44100 Hz, S16LE, 2 canais\n"
                          "B: 8000 Hz, S16LE, 1 canal\n";
             return 0;
@@ -63,8 +63,8 @@ int main(int argc, char* argv[])
     }
 
     // Se a configuracao foi escolhida e a saida nao foi informada, o nome acompanha a escolha.
-    if (saida == "saida_pcm_A.mkv" && pcm == &configuracaoB)
-        saida = "saida_pcm_B.mkv";
+    if (saida == "saida_pcm_A.mov" && pcm == &configuracaoB)
+        saida = "saida_pcm_B.mov";
 
     if (video.empty() || !fs::is_regular_file(video))
     {
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
     // Video: reencodado em H.264. I420 gera perfil High (4:2:0), compativel com a maioria dos players.
     // Audio: audioconvert e audioresample convertem formato/canais e taxa para as caps A ou B.
     const std::string pipelineTexto =
-        "matroskamux name=mux ! filesink name=arquivo "
+        "qtmux name=mux ! filesink name=arquivo "
         "filesrc name=entrada ! decodebin name=dec "
         "dec. ! videoconvert ! video/x-raw,format=I420 ! "
         "x264enc tune=zerolatency ! h264parse ! queue ! mux. "
@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
 
     if (gst_element_set_state(pipeline, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE)
     {
-        std::cerr << "Erro ao iniciar a pipeline. Verifique os plugins x264 e matroska.\n";
+        std::cerr << "Erro ao iniciar a pipeline. Verifique os plugins x264 e isomp4.\n";
         resultado = 1;
     }
     else

@@ -1,5 +1,7 @@
-/build/
-/saida*/
+build/
+saida*/
+saida_pcm_*.mkv
+saida_pcm_*.mov
 *.zip
 __pycache__/
 *.log
