@@ -120,7 +120,7 @@ GstElement* configurarPipeline(GstElement* pipeline, const Opcoes& opcoes)
         g_object_set(rede, "port", static_cast<int>(opcoes.porta), nullptr);
         jitter = gst_bin_get_by_name(GST_BIN(pipeline), "jitter");
         g_object_set(jitter, "latency", opcoes.latencia, "do-lost", TRUE, nullptr);
-    }
+    } 
     gst_object_unref(rede);
 
     std::cout << opcoes.modo << " porta=" << opcoes.porta;
