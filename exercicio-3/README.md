@@ -31,7 +31,7 @@ O som esperado e um tom continuo de 440 Hz. Repita com `-Latencia 50`, `200` e `
 
 Em maquinas diferentes, informe em `-Destino` o IP da maquina receptora e use a mesma porta em ambos os terminais. A rede e o firewall devem permitir UDP de entrada nessa porta. Nao ha descoberta automatica nem criptografia.
 
-Para ver as opcoes diretamente: `./build/exercicio_3.exe --ajuda`. A porta aceita 1 a 65535, a latencia 0 a 60000 ms e a duracao 0 a 86400 s. Erros de criacao, inicializacao e execucao da pipeline sao reportados no console.
+A porta aceita 1 a 65535, a latencia 0 a 60000 ms e a duracao 0 a 86400 s. Erros de criacao, inicializacao e execucao da pipeline sao reportados no console.
 
 ## Funcionamento
 
