@@ -15,7 +15,26 @@ Executado em 18/11/2026 no Windows 11 com GStreamer 1.28.6 (MinGW x64). O recept
 - **Rede simulada:** com atrasos de ate 120 ms, o buffer de **50 ms** descarta como atrasados cerca de 1 em cada 4 pacotes, e o audio sai picotado. Com **500 ms**, nenhum pacote chega tarde e so sobram as perdas reais do `netsim` (cerca de 1%), que nenhum buffer recupera. O custo e quase meio segundo de atraso.
 - **Diferenca do exercicio 3:** os pacotes agora levam 20 ms de audio (cerca de 53 por segundo) em vez de 128 ms (cerca de 8 por segundo). Por isso os contadores sao maiores e cada pacote perdido corta so 20 ms de som.
 
-## 2. Transmissao real entre dois computadores (preencher na demonstracao)
+## 2. Transmissao real entre dois computadores
+
+> **EXEMPLO ILUSTRATIVO: valores ficticios, NAO medidos.** Esta secao serve de modelo do formato e da ordem de grandeza esperados. Para entregar, substitua pelos numeros de `evidencias/latencia_50ms.txt` e `latencia_500ms.txt` da sua demonstracao.
+
+| | Maquina A (transmissor) | Maquina B (receptor) |
+|---|---|---|
+| Aparelho / SO | Notebook, Windows 11 | Notebook, Windows 11 |
+| IPv4 | 192.168.43.120 | 192.168.43.87 |
+| Rede | Hotspot de celular (Wi-Fi 2,4 GHz) | mesma rede |
+
+Receptor com `-Duracao 30`, transmissor com `-Fonte bipe` iniciado cerca de 2 s depois (cerca de 28 s de audio a 50 pacotes/s, ou seja, cerca de 1400 pacotes esperados).
+
+| Latencia | num-pushed | num-lost (%) | num-late | avg-jitter | Percepcao (atraso do bipe, cortes) |
+|---|---:|---:|---:|---:|---|
+| 50 ms | 1377 | 23 (1,6 %) | 19 | 9,4 ms | Bipe praticamente imediato; 3 ou 4 estalos curtos em 30 s, nos picos de jitter do Wi-Fi |
+| 500 ms | 1396 | 4 (0,3 %) | 0 | 8,9 ms | Bipe atrasado cerca de meio segundo; nenhum corte audivel |
+
+Leitura: o jitter medio do Wi-Fi (cerca de 9 ms) fica abaixo de 50 ms, mas rajadas ocasionais passam dessa margem e viram `num-late`. Com 500 ms nenhum pacote chega tarde, e as 4 perdas restantes sao perdas reais da rede. A tendencia e a mesma do teste com `netsim` da secao 1, so que bem mais suave, porque a rede real tem menos jitter que a simulada.
+
+### Modelo em branco para a demonstracao
 
 | | Maquina A (transmissor) | Maquina B (receptor) |
 |---|---|---|
@@ -38,6 +57,8 @@ Para ter variacao mesmo numa rede boa, repita com `-SimularRede` no transmissor.
 
 | Data | Rede | Receptor (PC ou celular) | Resultado |
 |---|---|---|---|
+| *exemplo ilustrativo* | Hotspot de celular | VLC no notebook B (`udp://@:5000`) | Bola visivel cerca de 2 s apos iniciar; imagem fluida a 15 fps |
+| *exemplo ilustrativo* | Wi-Fi institucional | VLC no notebook B | Nada aparece: isolamento de clientes. Registrado e refeito no hotspot |
 | | | | |
 
 Teste local do autor: a pipeline do enunciado enviada para `127.0.0.1:5000` e lida com `udpsrc ! tsdemux ! h264parse` entregou 59 quadros H.264 de 640x360 em cerca de 4 s (15 fps).
