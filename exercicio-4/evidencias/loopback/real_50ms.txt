@@ -1,0 +1,33 @@
+pipeline: udpsrc name=rede timeout=3000000000 caps="application/x-rtp,media=(string)audio,clock-rate=(int)8000,encoding-name=(string)PCMU,payload=(int)0" ! rtpjitterbuffer name=jitter ! rtppcmudepay ! mulawdec ! audioconvert ! audioresample ! fakesink sync=true
+receptor escutando 0.0.0.0:5104 latencia=50ms (sem audio)
+tempo | num-pushed | num-lost | num-late | avg-jitter
+   1s |         24 |        0 |        0 | 9.24 ms
+   2s |         86 |        0 |        0 | 6.49 ms
+   3s |        142 |        0 |        0 | 5.93 ms
+
+(exercicio_4.exe:29060): GLib-GIO-WARNING **: 19:41:57.011: Failed to open application manifest `C:\Program Files\WindowsApps\Microsoft.MinecraftUWP_1.26.4501.0_x64__8wekyb3d8bbwe\AppxManifest.xml' for package #135 (`Microsoft.MinecraftUWP_1.26.4501.0_x64__8wekyb3d8bbwe'): error code 0x5
+   4s |        199 |        0 |        0 | 6.64 ms
+   5s |        244 |        0 |        0 | 6.30 ms
+   6s |        300 |        0 |        0 | 6.59 ms
+   7s |        356 |        0 |        0 | 5.74 ms
+   8s |        415 |        0 |        0 | 6.05 ms
+   9s |        473 |        0 |        0 | 6.50 ms
+  10s |        519 |        0 |        0 | 7.34 ms
+  11s |        577 |        0 |        0 | 5.54 ms
+  12s |        635 |        0 |        0 | 6.17 ms
+  13s |        692 |        0 |        0 | 5.79 ms
+  14s |        738 |        0 |        0 | 5.77 ms
+  15s |        795 |        0 |        0 | 7.11 ms
+  16s |        852 |        0 |        0 | 6.99 ms
+  17s |        909 |        0 |        0 | 6.11 ms
+  18s |        954 |        0 |        0 | 6.57 ms
+  19s |       1011 |        0 |        0 | 5.96 ms
+  20s |       1070 |        0 |        0 | 5.92 ms
+
+Resumo (latencia do jitter buffer = 50 ms)
+  num-pushed (tocados)     : 1070
+  num-lost (perdidos)      : 0 (0.00 %)
+  num-late (atrasados)     : 0
+  num-duplicates           : 0
+  avg-jitter               : 5.92 ms
+  latencia da pipeline     : 70.00 ms
